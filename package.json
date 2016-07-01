@@ -1,0 +1,29 @@
+{
+    "author": "q@qypea.com",
+    "dependencies": {},
+    "keywords": [],
+    "name": "glanceface",
+    "pebble": {
+        "capabilities": [
+            ""
+        ],
+        "displayName": "GlanceFace",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk"
+        ],
+        "uuid": "c70a54ab-dffb-473d-bfa0-2575ff43a9e9",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
