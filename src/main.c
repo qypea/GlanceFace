@@ -135,6 +135,8 @@ void handle_init(void) {
 }
 
 void handle_deinit(void) {
+   app_sync_deinit(&sync);
+   battery_state_service_unsubscribe();
    tick_timer_service_unsubscribe();
    layer_destroy(line_layer);
    text_layer_destroy(text_time_layer);
