@@ -71,6 +71,14 @@ static void sync_tuple_changed_callback(const uint32_t key,
   }
 }
 
+static void sync_error_callback(DictionaryResult dict_error,
+                                AppMessageResult app_message_error,
+                                void *context) {
+   // Error!
+   static char error_str[] = "Sync Error";
+   text_layer_set_text(text_calendar_layer, error_str);
+}
+
 void handle_init(void) {
    window = window_create();
    window_stack_push(window, true /* Animated */);
@@ -131,7 +139,7 @@ void handle_init(void) {
    app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
                  initial_values, ARRAY_LENGTH(initial_values),
                  sync_tuple_changed_callback,
-                 NULL /*sync_error_callback*/, NULL);
+                 sync_error_callback, NULL);
 }
 
 void handle_deinit(void) {
