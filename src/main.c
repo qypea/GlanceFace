@@ -129,7 +129,7 @@ void handle_init(void) {
    battery_state_service_subscribe(handle_watchbatt_change);
    handle_watchbatt_change(battery_state_service_peek());
 
-   // TODO: Subscribe to phone data
+   // Subscribe to phone data
    const int inbound_size = 256;
    const int outbound_size = 16;
    app_message_open(inbound_size, outbound_size);
