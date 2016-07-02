@@ -85,7 +85,7 @@ void handle_init(void) {
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    layer_add_child(window_layer, text_layer_get_layer(text_date_layer));
 
-   text_watchbatt_layer = text_layer_create(GRect(62, 0, 40, 22));
+   text_watchbatt_layer = text_layer_create(GRect(104, 0, 40, 22));
    text_layer_set_text_color(text_watchbatt_layer, GColorWhite);
    text_layer_set_background_color(text_watchbatt_layer, GColorClear);
    text_layer_set_font(text_watchbatt_layer,
