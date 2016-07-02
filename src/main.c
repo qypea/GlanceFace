@@ -47,7 +47,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 
 void handle_watchbatt_change(BatteryChargeState state) {
    // Need to be static because they're used by the system later.
-   static char watchbatt_text[] = "100%";
+   static char watchbatt_text[] = "UNK";
 
    if (state.is_charging) {
       snprintf(watchbatt_text, 4, "CHR");
@@ -126,7 +126,7 @@ void handle_init(void) {
    const int outbound_size = 16;
    app_message_open(inbound_size, outbound_size);
    Tuplet initial_values[] = {
-       TupletCString(CALENDAR, "None!!"),
+       TupletCString(CALENDAR, "No event synced"),
    };
    app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
                  initial_values, ARRAY_LENGTH(initial_values),
