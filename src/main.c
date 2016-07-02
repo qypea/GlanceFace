@@ -4,15 +4,13 @@ Window *window;
 TextLayer *text_time_layer;
 TextLayer *text_date_layer;
 TextLayer *text_watchbatt_layer;
-TextLayer *text_phonebatt_layer;
 TextLayer *text_calendar_layer;
 Layer *line_layer;
 
 static AppSync sync;
 static uint8_t sync_buffer[256];
-enum qpebble_keys {
-   BATTERY_LEVEL = 1,
-   CALENDAR = 2,
+enum glanceface_keys {
+   CALENDAR = 1,
 };
 
 void line_layer_update_callback(Layer *layer, GContext* ctx) {
@@ -66,22 +64,6 @@ static void sync_tuple_changed_callback(const uint32_t key,
                                         const Tuple* old_tuple,
                                         void* context) {
    switch (key) {
-      case BATTERY_LEVEL: {
-         static char phonebatt_text[] = "100%";
-         uint8_t level = new_tuple->value->uint8;
-           if (level == 255) {
-              snprintf(phonebatt_text, 4, "Unk");
-         } else if (level == 254) {
-            snprintf(phonebatt_text, 4, "CHR");
-         } else if (level > 60) {
-            snprintf(phonebatt_text, 4, " ");
-         } else {
-            snprintf(phonebatt_text, 4, "%d%%", level);
-         }
-         text_layer_set_text(text_phonebatt_layer, phonebatt_text);
-         break;
-      }
-
     case CALENDAR:
       // App Sync keeps new_tuple in sync_buffer, so we may use it directly
       text_layer_set_text(text_calendar_layer, new_tuple->value->cstring);
@@ -110,14 +92,6 @@ void handle_init(void) {
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
    layer_add_child(window_layer, text_layer_get_layer(text_watchbatt_layer));
-
-   text_phonebatt_layer = text_layer_create(GRect(104, 0, 40, 22));
-   text_layer_set_text_color(text_phonebatt_layer, GColorWhite);
-   text_layer_set_background_color(text_phonebatt_layer, GColorClear);
-   text_layer_set_font(text_phonebatt_layer,
-                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-   text_layer_set_text_alignment(text_phonebatt_layer, GTextAlignmentRight);
-   layer_add_child(window_layer, text_layer_get_layer(text_phonebatt_layer));
 
    text_time_layer = text_layer_create(GRect(8, 22, 144-16, 50));
    text_layer_set_text_color(text_time_layer, GColorWhite);
@@ -152,7 +126,6 @@ void handle_init(void) {
    const int outbound_size = 16;
    app_message_open(inbound_size, outbound_size);
    Tuplet initial_values[] = {
-       TupletInteger(BATTERY_LEVEL, 255),
        TupletCString(CALENDAR, "None!!"),
    };
    app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
@@ -167,7 +140,6 @@ void handle_deinit(void) {
    text_layer_destroy(text_time_layer);
    text_layer_destroy(text_date_layer);
    text_layer_destroy(text_watchbatt_layer);
-   text_layer_destroy(text_phonebatt_layer);
    text_layer_destroy(text_calendar_layer);
    window_destroy(window);
 }
