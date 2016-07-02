@@ -93,20 +93,12 @@ void handle_init(void) {
    int margin = 8;
    int offy = bounds.origin.y;
 
-   // Date in upper-left/upper-middle
+   // Date in upper-left
    text_date_layer = text_layer_create(
-#ifdef PBL_ROUND
-      GRect(bounds.origin.x,
-            offy,
-            bounds.size.w,
-            smallh));
-   text_layer_set_text_alignment(text_date_layer, GTextAlignmentCenter);
-#else
       GRect(bounds.origin.x,
             offy,
             halfw,
             smallh));
-#endif
    text_layer_set_text_color(text_date_layer, GColorWhite);
    text_layer_set_background_color(text_date_layer, GColorClear);
    text_layer_set_font(text_date_layer,
@@ -124,9 +116,7 @@ void handle_init(void) {
    text_layer_set_font(text_watchbatt_layer,
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentRight);
-#ifndef PBL_ROUND
    layer_add_child(window_layer, text_layer_get_layer(text_watchbatt_layer));
-#endif
 
    offy = offy + smallh;
 
