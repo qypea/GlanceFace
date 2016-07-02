@@ -50,7 +50,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
 void handle_watchbatt_change(BatteryChargeState state) {
    // Need to be static because they're used by the system later.
    static char watchbatt_text[] = "100%";
-   
+
    if (state.is_charging) {
       snprintf(watchbatt_text, 4, "CHR");
    } else if (state.charge_percent > 30) {
@@ -61,8 +61,10 @@ void handle_watchbatt_change(BatteryChargeState state) {
    text_layer_set_text(text_watchbatt_layer, watchbatt_text);
 }
 
-static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, 
-                                        const Tuple* old_tuple, void* context) {
+static void sync_tuple_changed_callback(const uint32_t key,
+                                        const Tuple* new_tuple,
+                                        const Tuple* old_tuple,
+                                        void* context) {
    switch (key) {
       case BATTERY_LEVEL: {
          static char phonebatt_text[] = "100%";
@@ -91,55 +93,60 @@ void handle_init(void) {
    window = window_create();
    window_stack_push(window, true /* Animated */);
    window_set_background_color(window, GColorBlack);
-   
+
    Layer *window_layer = window_get_root_layer(window);
-   
+
    text_date_layer = text_layer_create(GRect(0, 0, 60, 22));
    text_layer_set_text_color(text_date_layer, GColorWhite);
    text_layer_set_background_color(text_date_layer, GColorClear);
-   text_layer_set_font(text_date_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_font(text_date_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    layer_add_child(window_layer, text_layer_get_layer(text_date_layer));
-   
+
    text_watchbatt_layer = text_layer_create(GRect(62, 0, 40, 22));
    text_layer_set_text_color(text_watchbatt_layer, GColorWhite);
    text_layer_set_background_color(text_watchbatt_layer, GColorClear);
-   text_layer_set_font(text_watchbatt_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_font(text_watchbatt_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
    layer_add_child(window_layer, text_layer_get_layer(text_watchbatt_layer));
-   
+
    text_phonebatt_layer = text_layer_create(GRect(104, 0, 40, 22));
    text_layer_set_text_color(text_phonebatt_layer, GColorWhite);
    text_layer_set_background_color(text_phonebatt_layer, GColorClear);
-   text_layer_set_font(text_phonebatt_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_font(text_phonebatt_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    text_layer_set_text_alignment(text_phonebatt_layer, GTextAlignmentRight);
    layer_add_child(window_layer, text_layer_get_layer(text_phonebatt_layer));
-   
+
    text_time_layer = text_layer_create(GRect(8, 22, 144-16, 50));
    text_layer_set_text_color(text_time_layer, GColorWhite);
    text_layer_set_background_color(text_time_layer, GColorClear);
    text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
-   text_layer_set_font(text_time_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
+   text_layer_set_font(text_time_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
    layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
    GRect line_frame = GRect(8, 75, 144-16, 2);
    line_layer = layer_create(line_frame);
    layer_set_update_proc(line_layer, line_layer_update_callback);
    layer_add_child(window_layer, line_layer);
-   
+
    text_calendar_layer = text_layer_create(GRect(0, 78, 144, 168 - 76));
    text_layer_set_text_color(text_calendar_layer, GColorWhite);
    text_layer_set_background_color(text_calendar_layer, GColorClear);
    text_layer_set_overflow_mode(text_calendar_layer, GTextOverflowModeFill);
-   text_layer_set_font(text_calendar_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_font(text_calendar_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    layer_add_child(window_layer, text_layer_get_layer(text_calendar_layer));
 
    // Subscribe to date/time
    tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
-   
+
    // Subscribe to watchbatt
    battery_state_service_subscribe(handle_watchbatt_change);
    handle_watchbatt_change(battery_state_service_peek());
-   
+
    // TODO: Subscribe to phone data
    const int inbound_size = 256;
    const int outbound_size = 16;
@@ -148,8 +155,10 @@ void handle_init(void) {
        TupletInteger(BATTERY_LEVEL, 255),
        TupletCString(CALENDAR, "None!!"),
    };
-   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values, ARRAY_LENGTH(initial_values),
-              sync_tuple_changed_callback, NULL /*sync_error_callback*/, NULL);
+   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
+                 initial_values, ARRAY_LENGTH(initial_values),
+                 sync_tuple_changed_callback,
+                 NULL /*sync_error_callback*/, NULL);
 }
 
 void handle_deinit(void) {
