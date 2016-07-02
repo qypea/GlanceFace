@@ -85,36 +85,73 @@ void handle_init(void) {
    window_set_background_color(window, GColorBlack);
 
    Layer *window_layer = window_get_root_layer(window);
+   GRect bounds = layer_get_bounds(window_layer);
 
-   text_date_layer = text_layer_create(GRect(0, 0, 60, 22));
+   int smallh = 21;
+   int largeh = 51;
+   int halfw = bounds.size.w / 2;
+   int margin = 8;
+   int offy = bounds.origin.y;
+
+   // Date in upper-left
+   text_date_layer = text_layer_create(
+      GRect(bounds.origin.x,
+            offy,
+            halfw,
+            smallh));
    text_layer_set_text_color(text_date_layer, GColorWhite);
    text_layer_set_background_color(text_date_layer, GColorClear);
    text_layer_set_font(text_date_layer,
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
    layer_add_child(window_layer, text_layer_get_layer(text_date_layer));
 
-   text_watchbatt_layer = text_layer_create(GRect(104, 0, 40, 22));
+   // Watch battery in upper-right
+   text_watchbatt_layer = text_layer_create(
+      GRect(bounds.origin.x + halfw,
+            offy,
+            halfw,
+            smallh));
    text_layer_set_text_color(text_watchbatt_layer, GColorWhite);
    text_layer_set_background_color(text_watchbatt_layer, GColorClear);
    text_layer_set_font(text_watchbatt_layer,
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-   text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
+   text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentRight);
    layer_add_child(window_layer, text_layer_get_layer(text_watchbatt_layer));
 
-   text_time_layer = text_layer_create(GRect(8, 22, 144-16, 50));
+   offy = offy + smallh;
+
+   // Time next
+   text_time_layer = text_layer_create(
+      GRect(bounds.origin.x + margin,
+            offy,
+            bounds.size.w - margin*2,
+            largeh));
    text_layer_set_text_color(text_time_layer, GColorWhite);
    text_layer_set_background_color(text_time_layer, GColorClear);
-   text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
+   text_layer_set_text_alignment(text_time_layer, GTextAlignmentCenter);
    text_layer_set_font(text_time_layer,
                        fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
    layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
-   GRect line_frame = GRect(8, 75, 144-16, 2);
+   offy = offy + largeh + 2;
+
+   // Separator
+   GRect line_frame = GRect(bounds.origin.x + margin,
+                            offy,
+                            bounds.size.w - margin*2,
+                            2);
    line_layer = layer_create(line_frame);
    layer_set_update_proc(line_layer, line_layer_update_callback);
    layer_add_child(window_layer, line_layer);
 
-   text_calendar_layer = text_layer_create(GRect(0, 78, 144, 168 - 76));
+   offy = offy + 2;
+
+   // Calendar in bottom half
+   text_calendar_layer = text_layer_create(
+      GRect(bounds.origin.x,
+            offy,
+            bounds.size.w,
+            bounds.size.h - offy));
    text_layer_set_text_color(text_calendar_layer, GColorWhite);
    text_layer_set_background_color(text_calendar_layer, GColorClear);
    text_layer_set_overflow_mode(text_calendar_layer, GTextOverflowModeFill);
