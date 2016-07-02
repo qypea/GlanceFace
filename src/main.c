@@ -1,76 +1,170 @@
 #include <pebble.h>
 
-Window *my_window;
-TextLayer *s_time_layer;
+Window *window;
+TextLayer *text_time_layer;
+TextLayer *text_date_layer;
+TextLayer *text_watchbatt_layer;
+TextLayer *text_phonebatt_layer;
+TextLayer *text_calendar_layer;
+Layer *line_layer;
 
-static void update_time() {
-  // Get a tm structure
-  time_t temp = time(NULL);
-  struct tm *tick_time = localtime(&temp);
+static AppSync sync;
+static uint8_t sync_buffer[256];
+enum qpebble_keys {
+   BATTERY_LEVEL = 1,
+   CALENDAR = 2,
+};
 
-  // Write the current hours and minutes into a buffer
-  static char s_buffer[8];
-  strftime(s_buffer, sizeof(s_buffer), clock_is_24h_style() ?
-                                          "%H:%M" : "%I:%M", tick_time);
-
-  // Display this time on the TextLayer
-  text_layer_set_text(s_time_layer, s_buffer);
+void line_layer_update_callback(Layer *layer, GContext* ctx) {
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, layer_get_bounds(layer), 0, GCornerNone);
 }
 
-static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_time();
+void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
+   // Need to be static because they're used by the system later.
+   static char time_text[] = "00:00";
+   static char date_text[] = "00/00";
+   char *time_format;
+
+   // TODO: Only update the date when it's changed.
+   strftime(date_text, sizeof(date_text), "%m/%d", tick_time);
+   text_layer_set_text(text_date_layer, date_text);
+
+   if (clock_is_24h_style()) {
+      time_format = "%R";
+   } else {
+      time_format = "%I:%M";
+   }
+
+   strftime(time_text, sizeof(time_text), time_format, tick_time);
+
+   // Kludge to handle lack of non-padded hour format string
+   // for twelve hour clock.
+   if (!clock_is_24h_style() && (time_text[0] == '0')) {
+      memmove(time_text, &time_text[1], sizeof(time_text) - 1);
+   }
+
+   text_layer_set_text(text_time_layer, time_text);
 }
 
-static void main_window_load(Window *window) {
-  // Get information about the Window
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-
-  // Create the TextLayer with specific bounds
-  s_time_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(58, 52), bounds.size.w, 50));
-
-  // Improve the layout to be more like a watchface
-  text_layer_set_background_color(s_time_layer, GColorClear);
-  text_layer_set_text_color(s_time_layer, GColorBlack);
-  text_layer_set_text(s_time_layer, "00:00");
-  text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
-  text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
-
-  // Add it as a child layer to the Window's root layer
-  layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
-    
-  // Make sure the time is displayed from the start
-  update_time();
+void handle_watchbatt_change(BatteryChargeState state) {
+   // Need to be static because they're used by the system later.
+   static char watchbatt_text[] = "100%";
+   
+   if (state.is_charging) {
+      snprintf(watchbatt_text, 4, "CHR");
+   } else if (state.charge_percent > 30) {
+      snprintf(watchbatt_text, 4, " ");
+   } else {
+      snprintf(watchbatt_text, 4, "%d%%", state.charge_percent);
+   }
+   text_layer_set_text(text_watchbatt_layer, watchbatt_text);
 }
 
-static void main_window_unload(Window *window) {
-  // Destroy TextLayer
-  text_layer_destroy(s_time_layer);
+static void sync_tuple_changed_callback(const uint32_t key, const Tuple* new_tuple, 
+                                        const Tuple* old_tuple, void* context) {
+   switch (key) {
+      case BATTERY_LEVEL: {
+         static char phonebatt_text[] = "100%";
+         uint8_t level = new_tuple->value->uint8;
+           if (level == 255) {
+              snprintf(phonebatt_text, 4, "Unk");
+         } else if (level == 254) {
+            snprintf(phonebatt_text, 4, "CHR");
+         } else if (level > 60) {
+            snprintf(phonebatt_text, 4, " ");
+         } else {
+            snprintf(phonebatt_text, 4, "%d%%", level);
+         }
+         text_layer_set_text(text_phonebatt_layer, phonebatt_text);
+         break;
+      }
+
+    case CALENDAR:
+      // App Sync keeps new_tuple in sync_buffer, so we may use it directly
+      text_layer_set_text(text_calendar_layer, new_tuple->value->cstring);
+      break;
+  }
 }
 
 void handle_init(void) {
-  my_window = window_create();
+   window = window_create();
+   window_stack_push(window, true /* Animated */);
+   window_set_background_color(window, GColorBlack);
+   
+   Layer *window_layer = window_get_root_layer(window);
+   
+   text_date_layer = text_layer_create(GRect(0, 0, 60, 22));
+   text_layer_set_text_color(text_date_layer, GColorWhite);
+   text_layer_set_background_color(text_date_layer, GColorClear);
+   text_layer_set_font(text_date_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   layer_add_child(window_layer, text_layer_get_layer(text_date_layer));
+   
+   text_watchbatt_layer = text_layer_create(GRect(62, 0, 40, 22));
+   text_layer_set_text_color(text_watchbatt_layer, GColorWhite);
+   text_layer_set_background_color(text_watchbatt_layer, GColorClear);
+   text_layer_set_font(text_watchbatt_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
+   layer_add_child(window_layer, text_layer_get_layer(text_watchbatt_layer));
+   
+   text_phonebatt_layer = text_layer_create(GRect(104, 0, 40, 22));
+   text_layer_set_text_color(text_phonebatt_layer, GColorWhite);
+   text_layer_set_background_color(text_phonebatt_layer, GColorClear);
+   text_layer_set_font(text_phonebatt_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   text_layer_set_text_alignment(text_phonebatt_layer, GTextAlignmentRight);
+   layer_add_child(window_layer, text_layer_get_layer(text_phonebatt_layer));
+   
+   text_time_layer = text_layer_create(GRect(8, 22, 144-16, 50));
+   text_layer_set_text_color(text_time_layer, GColorWhite);
+   text_layer_set_background_color(text_time_layer, GColorClear);
+   text_layer_set_text_alignment(text_watchbatt_layer, GTextAlignmentCenter);
+   text_layer_set_font(text_time_layer, fonts_get_system_font(FONT_KEY_ROBOTO_BOLD_SUBSET_49));
+   layer_add_child(window_layer, text_layer_get_layer(text_time_layer));
 
-  // Set handlers to manage the elements inside the Window
-  window_set_window_handlers(my_window, (WindowHandlers) {
-    .load = main_window_load,
-    .unload = main_window_unload
-  });
+   GRect line_frame = GRect(8, 75, 144-16, 2);
+   line_layer = layer_create(line_frame);
+   layer_set_update_proc(line_layer, line_layer_update_callback);
+   layer_add_child(window_layer, line_layer);
+   
+   text_calendar_layer = text_layer_create(GRect(0, 78, 144, 168 - 76));
+   text_layer_set_text_color(text_calendar_layer, GColorWhite);
+   text_layer_set_background_color(text_calendar_layer, GColorClear);
+   text_layer_set_overflow_mode(text_calendar_layer, GTextOverflowModeFill);
+   text_layer_set_font(text_calendar_layer, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   layer_add_child(window_layer, text_layer_get_layer(text_calendar_layer));
 
-  // Show the Window on the watch, with animated=true
-  window_stack_push(my_window, true);
-    
-  // Register with TickTimerService
-  tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
+   // Subscribe to date/time
+   tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
+   
+   // Subscribe to watchbatt
+   battery_state_service_subscribe(handle_watchbatt_change);
+   handle_watchbatt_change(battery_state_service_peek());
+   
+   // TODO: Subscribe to phone data
+   const int inbound_size = 256;
+   const int outbound_size = 16;
+   app_message_open(inbound_size, outbound_size);
+   Tuplet initial_values[] = {
+       TupletInteger(BATTERY_LEVEL, 255),
+       TupletCString(CALENDAR, "None!!"),
+   };
+   app_sync_init(&sync, sync_buffer, sizeof(sync_buffer), initial_values, ARRAY_LENGTH(initial_values),
+              sync_tuple_changed_callback, NULL /*sync_error_callback*/, NULL);
 }
 
 void handle_deinit(void) {
-  window_destroy(my_window);
+   tick_timer_service_unsubscribe();
+   layer_destroy(line_layer);
+   text_layer_destroy(text_time_layer);
+   text_layer_destroy(text_date_layer);
+   text_layer_destroy(text_watchbatt_layer);
+   text_layer_destroy(text_phonebatt_layer);
+   text_layer_destroy(text_calendar_layer);
+   window_destroy(window);
 }
 
 int main(void) {
-  handle_init();
-  app_event_loop();
-  handle_deinit();
+   handle_init();
+   app_event_loop();
+   handle_deinit();
 }
