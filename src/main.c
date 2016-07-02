@@ -182,6 +182,7 @@ void handle_init(void) {
    app_message_open(inbound_size, outbound_size);
    Tuplet initial_values[] = {
        TupletCString(CALENDAR, "No event synced"),
+       //TupletCString(CALENDAR, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea"),
    };
    app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
                  initial_values, ARRAY_LENGTH(initial_values),
