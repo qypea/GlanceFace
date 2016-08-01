@@ -4,13 +4,15 @@ Window *window;
 TextLayer *text_time_layer;
 TextLayer *text_date_layer;
 TextLayer *text_watchbatt_layer;
-TextLayer *text_calendar_layer;
+TextLayer *text_event_layer;
+TextLayer *text_location_layer;
 Layer *line_layer;
 
 static AppSync sync;
-static uint8_t sync_buffer[256];
+static uint8_t sync_buffer[512];
 enum glanceface_keys {
-   CALENDAR = 1,
+   EVENT = 1,
+   LOCATION = 2,
 };
 
 void line_layer_update_callback(Layer *layer, GContext* ctx) {
@@ -64,9 +66,14 @@ static void sync_tuple_changed_callback(const uint32_t key,
                                         const Tuple* old_tuple,
                                         void* context) {
    switch (key) {
-    case CALENDAR:
+    case EVENT:
       // App Sync keeps new_tuple in sync_buffer, so we may use it directly
-      text_layer_set_text(text_calendar_layer, new_tuple->value->cstring);
+      text_layer_set_text(text_event_layer, new_tuple->value->cstring);
+      break;
+
+    case LOCATION:
+      // App Sync keeps new_tuple in sync_buffer, so we may use it directly
+      text_layer_set_text(text_location_layer, new_tuple->value->cstring);
       break;
   }
 }
@@ -76,7 +83,9 @@ static void sync_error_callback(DictionaryResult dict_error,
                                 void *context) {
    // Error!
    static char error_str[] = "Sync Error";
-   text_layer_set_text(text_calendar_layer, error_str);
+   static char blank_str[] = "";
+   text_layer_set_text(text_event_layer, error_str);
+   text_layer_set_text(text_location_layer, blank_str);
 }
 
 void handle_init(void) {
@@ -146,18 +155,34 @@ void handle_init(void) {
 
    offy = offy + 2;
 
-   // Calendar in bottom half
-   text_calendar_layer = text_layer_create(
+   // Event in bottom half -1
+   text_event_layer = text_layer_create(
       GRect(bounds.origin.x,
             offy,
             bounds.size.w,
-            bounds.size.h - offy));
-   text_layer_set_text_color(text_calendar_layer, GColorWhite);
-   text_layer_set_background_color(text_calendar_layer, GColorClear);
-   text_layer_set_overflow_mode(text_calendar_layer, GTextOverflowModeFill);
-   text_layer_set_font(text_calendar_layer,
+            bounds.size.h - offy - smallh));
+   text_layer_set_text_color(text_event_layer, GColorWhite);
+   text_layer_set_background_color(text_event_layer, GColorClear);
+   text_layer_set_overflow_mode(text_event_layer, GTextOverflowModeFill);
+   text_layer_set_font(text_event_layer,
                        fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-   layer_add_child(window_layer, text_layer_get_layer(text_calendar_layer));
+   layer_add_child(window_layer, text_layer_get_layer(text_event_layer));
+
+
+   // Location in bottom row
+   text_location_layer = text_layer_create(
+      GRect(bounds.origin.x,
+            bounds.size.h - smallh,
+            bounds.size.w,
+            smallh));
+   text_layer_set_text_color(text_location_layer, GColorWhite);
+   text_layer_set_background_color(text_location_layer, GColorClear);
+   text_layer_set_overflow_mode(text_location_layer, GTextOverflowModeFill);
+   text_layer_set_font(text_location_layer,
+                       fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+   layer_add_child(window_layer, text_layer_get_layer(text_location_layer));
+
+
 
    // Subscribe to date/time
    tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
@@ -171,8 +196,9 @@ void handle_init(void) {
    const int outbound_size = 16;
    app_message_open(inbound_size, outbound_size);
    Tuplet initial_values[] = {
-       TupletCString(CALENDAR, "No event synced"),
-       //TupletCString(CALENDAR, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea"),
+       TupletCString(EVENT, "No event synced"),
+       //TupletCString(EVENT, "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea"),
+       TupletCString(LOCATION, ""),
    };
    app_sync_init(&sync, sync_buffer, sizeof(sync_buffer),
                  initial_values, ARRAY_LENGTH(initial_values),
@@ -188,7 +214,8 @@ void handle_deinit(void) {
    text_layer_destroy(text_time_layer);
    text_layer_destroy(text_date_layer);
    text_layer_destroy(text_watchbatt_layer);
-   text_layer_destroy(text_calendar_layer);
+   text_layer_destroy(text_event_layer);
+   text_layer_destroy(text_location_layer);
    window_destroy(window);
 }
 
