@@ -204,6 +204,8 @@ void handle_init(void) {
                  initial_values, ARRAY_LENGTH(initial_values),
                  sync_tuple_changed_callback,
                  sync_error_callback, NULL);
+
+   app_sync_set(&sync, initial_values, ARRAY_LENGTH(initial_values));
 }
 
 void handle_deinit(void) {
