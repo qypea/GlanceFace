@@ -6,6 +6,7 @@ test: built
 
 install: built
 	pebble install --phone phone
+	scp build/GlanceFace.pbw apache.local:/var/www/basic/htdocs/files/
 
 built:
 	pebble build
