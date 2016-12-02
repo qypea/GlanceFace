@@ -15,10 +15,6 @@
             "media": []
         },
         "sdkVersion": "3",
-        "targetPlatforms": [
-            "aplite",
-            "basalt"
-        ],
         "uuid": "c70a54ab-dffb-473d-bfa0-2575ff43a9e9",
         "watchapp": {
             "watchface": true
